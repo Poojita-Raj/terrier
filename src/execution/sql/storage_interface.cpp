@@ -49,6 +49,11 @@ storage::ProjectedRow *StorageInterface::GetIndexPR(catalog::index_oid_t index_o
   return index_pr_;
 }
 
+bool StorageInterface::VerifyTableInsertConstraint() {
+  auto *pr = table_redo_->Delta();
+  return db_accessor_->VerifyTableInsertConstraint(table_oid_, pr);
+}
+
 storage::TupleSlot StorageInterface::TableInsert() { return table_->Insert(exec_ctx_->GetTxn(), table_redo_); }
 
 bool StorageInterface::TableDelete(storage::TupleSlot table_tuple_slot) {
