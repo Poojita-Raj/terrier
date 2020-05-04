@@ -4,6 +4,7 @@
 
 #include "execution/ast/identifier.h"
 #include "execution/compiler/operator/operator_translator.h"
+#include "planner/plannodes/insert_plan_node.h"
 #include "storage/storage_defs.h"
 
 namespace terrier::catalog {
