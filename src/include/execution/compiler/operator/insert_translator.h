@@ -1,10 +1,11 @@
 #pragma once
 
 #include <vector>
-
+#include "execution/compiler/expression/pr_filler.h"
 #include "catalog/schema.h"
 #include "execution/compiler/ast_fwd.h"
 #include "execution/compiler/operator/operator_translator.h"
+#include "planner/plannodes/insert_plan_node.h"
 
 namespace terrier::planner {
 class InsertPlanNode;
