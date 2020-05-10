@@ -6,6 +6,7 @@
 #include "catalog/catalog_accessor.h"
 #include "execution/exec/execution_context.h"
 #include "execution/util/execution_common.h"
+#include "planner/plannodes/update_plan_node.h"
 #include "storage/index/index.h"
 #include "storage/sql_table.h"
 
@@ -54,6 +55,10 @@ storage::ProjectedRow *StorageInterface::GetIndexPR(catalog::index_oid_t index_o
 bool StorageInterface::VerifyTableInsertConstraint() {
   auto *pr = table_redo_->Delta();
   return db_accessor_->VerifyTableInsertConstraint(table_oid_, pr);
+}
+
+bool StorageInterface::UpdateVerify(storage::TupleSlot table_tuple_slot) {
+    return db_accessor_->VerifyTableUpdateConstraint(table_oid_, col_oids_, table_redo_->Delta(), table_tuple_slot);
 }
 
 bool StorageInterface::UpdateCascade(storage::TupleSlot table_tuple_slot) {
