@@ -59,11 +59,13 @@ void UpdateTranslator::PerformPipelineWork(WorkContext *context, FunctionBuilder
 
   // For each set clause, @prSet(update_pr, ...)
   GenSetTablePR(function, context);
+  GenUpdateCascade(function);
 
   if (op.GetIndexedUpdate()) {
     // For indexed updates, we need to re-insert into the table, and then delete-and-insert into every index.
     // var insert_slot = @tableInsert(&updater_)
     GenTableInsert(function);
+    GenUpdateVerify(function);
     const auto &indexes = GetCodeGen()->GetCatalogAccessor()->GetIndexOids(op.GetTableOid());
     for (const auto &index_oid : indexes) {
       GenIndexDelete(function, context, index_oid);
@@ -72,8 +74,8 @@ void UpdateTranslator::PerformPipelineWork(WorkContext *context, FunctionBuilder
   } else {
     // Non-indexed updates just update.
     GenTableUpdate(function);
+    GenUpdateVerify(function);
   }
-
   // @storageInterfaceFree(&updater)
   GenUpdaterFree(function);
 }
@@ -269,6 +271,30 @@ void UpdateTranslator::GenIndexDelete(FunctionBuilder *builder, WorkContext *con
   std::vector<ast::Expr *> delete_args{GetCodeGen()->AddressOf(updater_), child->GetSlotAddress()};
   auto *index_delete_call = GetCodeGen()->CallBuiltin(ast::Builtin::IndexDelete, delete_args);
   builder->Append(GetCodeGen()->MakeStmt(index_delete_call));
+}
+
+void UpdateTranslator::GenUpdateVerify(FunctionBuilder *builder) const {
+  const auto &op = GetPlanAs<planner::UpdatePlanNode>();
+  const auto &child = GetCompilationContext()->LookupTranslator(*op.GetChild(0));
+  const auto &delete_slot = child->GetSlotAddress();
+  std::vector<ast::Expr *> update_cascad_args{GetCodeGen()->AddressOf(updater_), delete_slot};
+  auto verify_constraint_call = GetCodeGen()->CallBuiltin(ast::Builtin::UpdateVerify, update_cascad_args);
+  auto cond = GetCodeGen()->UnaryOp(parsing::Token::Type::BANG, verify_constraint_call);
+  If success(builder, cond);
+  builder->Append(GetCodeGen()->AbortTxn(GetExecutionContext()));
+  success.EndIf();
+}
+
+void UpdateTranslator::GenUpdateCascade(FunctionBuilder *builder) const {
+  const auto &op = GetPlanAs<planner::UpdatePlanNode>();
+  const auto &child = GetCompilationContext()->LookupTranslator(*op.GetChild(0));
+  const auto &delete_slot = child->GetSlotAddress();
+  std::vector<ast::Expr *> update_cascad_args{GetCodeGen()->AddressOf(updater_), delete_slot};
+  auto update_cascade_call = GetCodeGen()->CallBuiltin(ast::Builtin::UpdateCascade, update_cascad_args);
+  auto cond = GetCodeGen()->UnaryOp(parsing::Token::Type::BANG, update_cascade_call);
+  If success(builder, cond);
+  builder->Append(GetCodeGen()->AbortTxn(GetExecutionContext()));
+  success.EndIf();
 }
 
 }  // namespace terrier::execution::compiler

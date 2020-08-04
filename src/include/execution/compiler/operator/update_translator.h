@@ -90,6 +90,12 @@ class UpdateTranslator : public OperatorTranslator {
   // Deletes from all indexes.
   void GenIndexDelete(FunctionBuilder *builder, WorkContext *context, const catalog::index_oid_t &index_oid) const;
 
+  // Verify update
+  void GenUpdateVerify(FunctionBuilder *builder) const;
+
+  // Cascade Delete
+  void GenUpdateCascade(FunctionBuilder *builder) const;
+
   static std::vector<catalog::col_oid_t> CollectOids(const catalog::Schema &schema) {
     std::vector<catalog::col_oid_t> oids;
     for (const auto &col : schema.GetColumns()) {
