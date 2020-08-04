@@ -1,9 +1,12 @@
 #pragma once
 
+#include <catalog/schema.h>
+
 #include <vector>
 
 #include "execution/ast/identifier.h"
 #include "execution/compiler/operator/operator_translator.h"
+#include "planner/plannodes/update_plan_node.h"
 #include "storage/storage_defs.h"
 
 namespace terrier::catalog {
@@ -98,6 +101,11 @@ class UpdateTranslator : public OperatorTranslator {
   void GenIndexDelete(FunctionBuilder *builder, WorkContext *context, const catalog::index_oid_t &index_oid) const;
 
   static std::vector<catalog::col_oid_t> CollectOids(const catalog::Schema &schema);
+  // Verify update
+  void GenUpdateVerify(FunctionBuilder *builder) const;
+
+  // Cascade Delete
+  void GenUpdateCascade(FunctionBuilder *builder) const;
 
  private:
   // Storage interface struct that we are updating with.

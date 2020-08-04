@@ -73,6 +73,9 @@ class DeleteTranslator : public OperatorTranslator {
   // Generates code to delete from the indexes.
   void GenIndexDelete(FunctionBuilder *builder, WorkContext *context, const catalog::index_oid_t &index_oid) const;
 
+  // Delete Cascade
+  void GenDeleteCascade(FunctionBuilder *builder) const;
+
  private:
   // Deleter storage interface struct.
   ast::Identifier deleter_;
